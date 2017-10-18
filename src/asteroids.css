@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+canvas {
+    width: 500px;
+    height: 500px;
+    margin: 20px;
+    border: 1px solid black;
+    box-shadow: 5px 5px #777;
+    image-rendering: pixelated;
+}
+
+.img_background {
+    width: 500px;
+    height: 500px;
+    padding: 20px;
+}

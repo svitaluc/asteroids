@@ -1,0 +1,24 @@
+{
+  "name": "asteroids",
+  "version": "1.0.0",
+  "description": "Asteroids game for CIS580, KSU, Fall 2017",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svitaluc/asteroids.git"
+  },
+  "author": "svitaluc",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/svitaluc/asteroids/issues"
+  },
+  "homepage": "https://github.com/svitaluc/asteroids#readme",
+  "devDependencies": {
+    "react-scripts": "^1.0.13"
+  }
+}
