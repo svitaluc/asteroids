@@ -28,6 +28,40 @@ export default class Asteroid {
         this.screenHeight = screenHeight;
 
         this.update = this.update.bind(this);
+        this.breakMe = this.breakMe.bind(this);
+        this.copy = this.copy.bind(this);
+    }
+
+    copy(){
+        var newAsteroid = new Asteroid(this.screenWidth, this.screenHeight);
+        newAsteroid.sidesNr = this.sidesNr;
+        newAsteroid.lastSide = this.lastSide;
+        newAsteroid.radius = this.radius;
+        newAsteroid.position.x = this.position.x;
+        newAsteroid.position.y = this.position.y;
+        newAsteroid.velocity.x = this.velocity.x;
+        newAsteroid.velocity.y = this.velocity.y;
+        return newAsteroid;
+    }
+
+    breakMe(){
+        var part1 = this.copy();
+        var part2 = this.copy();
+        part1.radius -= 10;
+
+
+        part2.radius = part1.radius;
+        part1.position.x += part1.radius/2;
+        part2.position.x -= part1.radius/2;
+        part1.velocity.y *= -1;
+
+        part2.velocity.x *= -1;
+        console.log(this,part1.position.x,part1.position.y,part1.radius,part1,part2);
+
+        var parts = [];
+        parts.push(part1);
+        parts.push(part2);
+        return parts;
     }
 
     update(){
@@ -58,6 +92,7 @@ export default class Asteroid {
                 this.position.x + this.radius * Math.cos(i * 2 * Math.PI / this.sidesNr),
                 this.position.y + this.radius * Math.sin(i * 2 * Math.PI / this.sidesNr));
         }
+        ctx.closePath();
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.fill();

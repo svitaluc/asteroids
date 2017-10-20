@@ -11,12 +11,15 @@ export default class Missile {
             x: velocity.x,
             y: velocity.y
         };
+        this.radius = 3;
         this.angle = angle;
         this.shotTime = time;
         this.missileSpeed = 2;
 
         this.update = this.update.bind(this);
     }
+
+
 
     update(){
         this.position.x += -Math.cos(this.angle) * this.missileSpeed + this.velocity.x;
@@ -27,7 +30,7 @@ export default class Missile {
         ctx.save();
         ctx.beginPath();
         ctx.fillStyle = 'white';
-        ctx.arc(this.position.x,this.position.y,3,0,2*Math.PI);
+        ctx.arc(this.position.x,this.position.y,this.radius,0,2*Math.PI);
         ctx.fill();
         ctx.restore();
     }

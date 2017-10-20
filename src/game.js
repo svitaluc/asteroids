@@ -7,7 +7,7 @@ import ScoreBoard from './scoreBoard'
  * Represents an asteroids game
  */
 export default class Game {
-    constructor(){
+    constructor() {
         this.screenWidth = 500;
         this.screenHeight = 500;
 
@@ -15,7 +15,7 @@ export default class Game {
         this.scoreBoard = new ScoreBoard();
         this.missiles = [];
         this.asteroids = [];
-        for(var i = 0; i < 15; i++){
+        for (var i = 0; i < 15; i++) {
             //TODO osetrit, ze neni na lodi!
             this.asteroids.push(new Asteroid(this.screenWidth, this.screenHeight));
         }
@@ -33,20 +33,20 @@ export default class Game {
         // Create the back buffer canvas
         this.backBufferCanvas = document.createElement('canvas');
         this.backBufferCanvas.width = this.screenWidth;
-        this.backBufferCanvas.height = this.screenHeight+30;
+        this.backBufferCanvas.height = this.screenHeight + 30;
         this.backBufferContext = this.backBufferCanvas.getContext('2d');
 
         // Create the screen buffer canvas
         this.screenBufferCanvas = document.createElement('canvas');
         this.screenBufferCanvas.width = this.screenWidth;
-        this.screenBufferCanvas.height = this.screenHeight+30;
+        this.screenBufferCanvas.height = this.screenHeight + 30;
         this.screenBufferContext = this.screenBufferCanvas.getContext('2d');
         var ctx = this.screenBufferContext;
 
         this.img = new Image();
         this.img.src = "space.jpg";
         var img = this.img;
-        this.img.onload = function() {
+        this.img.onload = function () {
             ctx.drawImage(img, 0, 0, 500, 500);
         };
         document.body.appendChild(this.screenBufferCanvas);
@@ -54,70 +54,154 @@ export default class Game {
         this.update = this.update.bind(this);
         this.render = this.render.bind(this);
         this.shootMissile = this.shootMissile.bind(this);
-        this.resolveAsteroidCollision = this.resolveAsteroidCollision.bind(this);
+        this.resolveAsteroidAsteroidCollision = this.resolveAsteroidAsteroidCollision.bind(this);
+        this.resolveAsteroidMissileCollision = this.resolveAsteroidMissileCollision.bind(this);
         this.loop = this.loop.bind(this);
         this.handleKeyDow = this.handleKeyDown.bind(this);
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.renderHelp = this.renderHelp.bind(this);
+        this.renderGameOver = this.renderGameOver.bind(this);
 
         window.onkeydown = this.handleKeyDow;
         window.onkeyup = this.handleKeyUp;
 
-
         this.loop();
     }
 
-    loop(){
-        // this.update();
+    loop() {
         this.render();
-        if(this.helpOn) {
+        if (this.state.lives === 0) {
+            this.renderGameOver();
+            return;
+        }
+        if (this.helpOn) {
             this.renderHelp();
         } else {
             this.update();
-            // this.render();
         }
-        requestAnimationFrame(this.loop);
+        requestAnimationFrame(this.loop)
     }
 
-    update(){
+    update() {
+        if (this.velocityChange) this.ship.updateVelocity(this.velocityChange);
+        if (this.shoot) this.shootMissile();
+        if (this.angleChange) this.ship.updateAngle(this.angleChange);
+
+        //update ship
         this.ship.update();
-        for(var i = this.missiles.length-1; i > -1 ; i--){
+
+        //update missiles position
+        for (var i = this.missiles.length - 1; i > -1; i--) {
             this.missiles[i].update();
-            if((this.missiles[i].position.x > this.screenWidth)
+            if ((this.missiles[i].position.x > this.screenWidth)
                 || (this.missiles[i].position.x < 0)
                 || (this.missiles[i].position.y > this.screenHeight)
-                || (this.missiles[i].position.y < 0)){
+                || (this.missiles[i].position.y < 0)) {
                 this.missiles.splice(i, 1);
             }
         }
-        for(var k = 0; k < this.asteroids.length-1; k++){
-            for(var j = k+1; j < this.asteroids.length; j++){
-                this.resolveAsteroidCollision(this.asteroids[k], this.asteroids[j]);
+
+        //update level
+        if(this.asteroids.length === 0) {
+
+        }
+
+        //update asteroid position + collision with ship
+        let deletedAsteroid = null;
+        for (var l = this.asteroids.length - 1; l > -1; l--) {
+            if (this.ship.collidesWithAsteroid(this.asteroids[l])) {
+                deletedAsteroid = l;
+                this.state.lives--;
+                this.ship.restart();
+            }
+            else {
+                this.asteroids[l].update();
             }
         }
-        for(var l = this.asteroids.length-1; l > -1; l--){
-            this.asteroids[l].update();
+        if (deletedAsteroid !== null) {
+            if (Math.ceil(this.asteroids[deletedAsteroid].radius / 10) > 1) {
+                var newParts = this.asteroids[deletedAsteroid].breakMe();
+                this.asteroids.splice(deletedAsteroid, 1);
+                this.asteroids.push(newParts[0]);
+                this.asteroids.push(newParts[1]);
+            } else {
+                this.asteroids.splice(deletedAsteroid, 1);
+            }
         }
+
+        //update asteroid-asteroid collisions
+        for (var k = 0; k < this.asteroids.length - 1; k++) {
+            for (var j = k + 1; j < this.asteroids.length; j++) {
+                this.resolveAsteroidAsteroidCollision(this.asteroids[k], this.asteroids[j]);
+            }
+        }
+
+        //update missile-asteroid collisions
+        let deletedMissiles = [];
+        for (i = this.missiles.length - 1; i > -1; i--) {
+            for (j = this.asteroids.length - 1; j > -1; j--) {
+                if (this.resolveAsteroidMissileCollision(j, i)) {
+                    deletedMissiles.push(i);
+                    break;
+                }
+            }
+        }
+        for (let i = deletedMissiles.length - 1; i >= 0; i--)
+            this.missiles.splice(deletedMissiles[i], 1);
+
     }
 
-    render(){
+    render() {
         this.backBufferContext.drawImage(this.img, 0, 0, 500, 500);
         this.ship.render(this.backBufferContext);
-        for(var i = 0; i < this.missiles.length; i++){
+        for (var i = 0; i < this.missiles.length; i++) {
             this.missiles[i].render(this.backBufferContext);
         }
-        for(i = 0; i < this.asteroids.length; i++){
+        for (i = 0; i < this.asteroids.length; i++) {
             this.asteroids[i].render(this.backBufferContext);
         }
         this.scoreBoard.render(this.backBufferContext, this.state);
-        this.screenBufferContext.drawImage(this.backBufferCanvas,0,0);
+        this.screenBufferContext.drawImage(this.backBufferCanvas, 0, 0);
+    }
+
+    renderGameOver() {
+        //TODO
+    }
+
+    resolveAsteroidMissileCollision(aIndex, mIndex) {
+        var asteroid = this.asteroids[aIndex];
+        var missile = this.missiles[mIndex];
+        var differenceX = Math.abs(asteroid.position.x - missile.position.x);
+        var differenceY = Math.abs(asteroid.position.y - missile.position.y);
+        if ((differenceX * differenceX + differenceY * differenceY) > Math.pow(asteroid.radius + missile.radius, 2))
+            return false;
+
+        var sizeClass = Math.ceil(asteroid.radius / 15);
+
+        //asteroid is small enough to be destroyed
+        if (sizeClass === 1) {
+            this.asteroids.splice(aIndex, 1);
+            this.state.score += 10;
+            return true;
+        }
+
+        this.state.score += (sizeClass === 2) ? 6 : 3;
+        //divide the asteroid
+        var asteroidParts = asteroid.breakMe();
+        this.asteroids.splice(aIndex, 1);
+        // this.missiles.splice(mIndex, 1);
+
+        this.asteroids.push(asteroidParts[0]);
+        this.asteroids.push(asteroidParts[1]);
+        return true;
+
     }
 
     //this function is based on the collision solving by Nathan Bean in https://github.com/zombiepaladin/pool/blob/master/src/app.js
-    resolveAsteroidCollision (a1, a2){
+    resolveAsteroidAsteroidCollision(a1, a2) {
         var differenceX = Math.abs(a1.position.x - a2.position.x);
         var differenceY = Math.abs(a1.position.y - a2.position.y);
-        if((differenceX*differenceX + differenceY*differenceY) > Math.pow(a1.radius + a2.radius, 2))
+        if ((differenceX * differenceX + differenceY * differenceY) > Math.pow(a1.radius + a2.radius, 2))
             return;
 
         var collisionNormal = {
@@ -158,17 +242,17 @@ export default class Game {
         }
     }
 
-    shootMissile(){
+    shootMissile() {
         var shootDelay = 100;
-        if ((this.missiles.length > 0) && ((new Date() - this.missiles[this.missiles.length-1].shotTime) < shootDelay)){
+        if ((this.missiles.length > 0) && ((new Date() - this.missiles[this.missiles.length - 1].shotTime) < shootDelay)) {
             return;
         }
         this.missiles.push(new Missile(this.ship.position, this.ship.velocity, this.ship.angle, new Date()))
     }
 
-    handleKeyDown(event){
+    handleKeyDown(event) {
         event.preventDefault();
-        if(this.helpOn && event.key != 'Escape'){
+        if (this.helpOn && event.key != 'Escape') {
             return;
         }
         switch (event.key) {
@@ -176,35 +260,25 @@ export default class Game {
             case 'ArrowLeft':
                 this.ship.updateAngle('l');
                 this.angleChange = 'l';
-                if (this.velocityChange) this.ship.updateVelocity(this.velocityChange);
-                if (this.shoot) this.shootMissile();
                 break;
             case 'd':
             case 'ArrowRight':
                 this.ship.updateAngle('r');
                 this.angleChange = 'r';
-                if (this.velocityChange) this.ship.updateVelocity(this.velocityChange);
-                if (this.shoot) this.shootMissile();
                 break;
             case 'w':
             case 'ArrowUp':
                 this.ship.updateVelocity('f');
                 this.velocityChange = 'f';
-                if (this.angleChange) this.ship.updateAngle(this.angleChange);
-                if (this.shoot) this.shootMissile();
                 break;
             case 's':
             case 'ArrowDown':
                 this.ship.updateVelocity('b');
                 this.velocityChange = 'b';
-                if (this.angleChange) this.ship.updateAngle(this.angleChange);
-                if (this.shoot) this.shootMissile();
                 break;
             case ' ':
                 this.shootMissile();
                 this.shoot = true;
-                if (this.velocityChange) this.ship.updateVelocity(this.velocityChange);
-                if (this.angleChange) this.ship.updateAngle(this.angleChange);
                 break;
             case 'Escape':
                 this.helpOn = !this.helpOn;
@@ -212,7 +286,7 @@ export default class Game {
 
     }
 
-    handleKeyUp(event){
+    handleKeyUp(event) {
         event.preventDefault();
         switch (event.key) {
             case 'a':
@@ -236,25 +310,25 @@ export default class Game {
         }
     }
 
-    renderHelp(){
+    renderHelp() {
         var ctx = this.backBufferContext;
         ctx.globalAlpha = 0.8;
         ctx.fillStyle = "grey";
-        ctx.fillRect(0, 0, this.screenWidth, this.screenHeight+30);
+        ctx.fillRect(0, 0, this.screenWidth, this.screenHeight + 30);
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.font = '30px orbitron arial';
         ctx.textAlign = 'center';
-        ctx.fillText("HELP", this.screenWidth/2, 100);
-        ctx.fillText("GAME CONTROLS:", this.screenWidth/2, 140);
+        ctx.fillText("HELP", this.screenWidth / 2, 100);
+        ctx.fillText("GAME CONTROLS:", this.screenWidth / 2, 140);
         ctx.font = '27px orbitron arial';
-        ctx.fillText("TURN LEFT: A or ArrowLeft", this.screenWidth/2, 200);
-        ctx.fillText("TURN RIGHT: D or ArrowRight", this.screenWidth/2, 250);
-        ctx.fillText("MOVE FORWARD: W or ArrowUp", this.screenWidth/2, 300);
-        ctx.fillText("MOVE BACKWARD: S or ArrowDown", this.screenWidth/2, 350);
-        ctx.fillText("SHOOT: Space bar", this.screenWidth/2, 400);
-        ctx.fillText("EXIT/ENTER HELP: Escape", this.screenWidth/2, 450);
+        ctx.fillText("TURN LEFT: A or ArrowLeft", this.screenWidth / 2, 200);
+        ctx.fillText("TURN RIGHT: D or ArrowRight", this.screenWidth / 2, 250);
+        ctx.fillText("MOVE FORWARD: W or ArrowUp", this.screenWidth / 2, 300);
+        ctx.fillText("MOVE BACKWARD: S or ArrowDown", this.screenWidth / 2, 350);
+        ctx.fillText("SHOOT: Space bar", this.screenWidth / 2, 400);
+        ctx.fillText("EXIT/ENTER HELP: Escape", this.screenWidth / 2, 450);
 
-        this.screenBufferContext.drawImage(this.backBufferCanvas,0,0);
+        this.screenBufferContext.drawImage(this.backBufferCanvas, 0, 0);
     }
 }
