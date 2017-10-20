@@ -90,13 +90,13 @@ export default class Game {
                 this.missiles.splice(i, 1);
             }
         }
-        for(i = 0; this.asteroids.length-1; i++){
-            for(var j = i+1; j < this.asteroids.length; j++){
-                this.resolveAsteroidCollision(this.asteroids[i], this.asteroids[j]);
+        for(var k = 0; k < this.asteroids.length-1; k++){
+            for(var j = k+1; j < this.asteroids.length; j++){
+                this.resolveAsteroidCollision(this.asteroids[k], this.asteroids[j]);
             }
         }
-        for(i = this.asteroids.length-1; i > -1; i--){
-            this.asteroids[i].update();
+        for(var l = this.asteroids.length-1; l > -1; l--){
+            this.asteroids[l].update();
         }
     }
 
@@ -117,8 +117,7 @@ export default class Game {
     resolveAsteroidCollision (a1, a2){
         var differenceX = Math.abs(a1.position.x - a2.position.x);
         var differenceY = Math.abs(a1.position.y - a2.position.y);
-        var distance = Math.sqrt(differenceX*differenceX + differenceY*differenceY);
-        if(distance > (a1.radius + a2.radius))
+        if((differenceX*differenceX + differenceY*differenceY) > Math.pow(a1.radius + a2.radius, 2))
             return;
 
         var collisionNormal = {
@@ -146,8 +145,10 @@ export default class Game {
         va1 = this.rotateVector(va1, -angle);
         va2 = this.rotateVector(va2, -angle);
 
-        a1.velocity = va1;
-        a2.velocity.x = va2;
+        a1.velocity.x = Math.round(va1.x * 100) / 100;
+        a1.velocity.y = Math.round(va1.y * 100) / 100;
+        a2.velocity.x = Math.round(va2.x * 100) / 100;
+        a2.velocity.y = Math.round(va2.y * 100) / 100;
     }
 
     rotateVector(vector, angle) {
