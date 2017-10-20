@@ -1,3 +1,8 @@
+@font-face {
+    font-family: orbitron;
+    src: url('orbitron.ttf') format('ttf');
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -8,7 +13,7 @@ body {
 
 canvas {
     width: 500px;
-    height: 500px;
+    height: 530px;
     margin: 20px;
     border: 1px solid black;
     box-shadow: 5px 5px #777;
