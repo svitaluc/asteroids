@@ -15,6 +15,7 @@ export default class Missile {
         this.angle = angle;
         this.shotTime = time;
         this.missileSpeed = 2;
+        this.enemy = false;
 
         this.update = this.update.bind(this);
     }
@@ -29,7 +30,7 @@ export default class Missile {
     render(ctx){
         ctx.save();
         ctx.beginPath();
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = (this.enemy) ? '#66cc00' : 'white';
         ctx.arc(this.position.x,this.position.y,this.radius,0,2*Math.PI);
         ctx.fill();
         ctx.restore();

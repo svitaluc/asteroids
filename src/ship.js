@@ -25,6 +25,7 @@ export default class Ship {
         this.collidesWithAsteroid = this.collidesWithAsteroid.bind(this);
         this.restart = this.restart.bind(this);
         this.render = this.render.bind(this);
+        this.relocate = this.relocate.bind(this);
     }
 
     update() {
@@ -55,6 +56,19 @@ export default class Ship {
         this.velocity.x = 0;
         this.velocity.y = 0;
         this.angle = Math.PI / 2;
+    }
+
+    relocate(){
+        this.position = {
+            x: Math.random() * this.screenWidth,
+            y: Math.random() * this.screenHeight
+        };
+        this.velocity = {
+            x: 0,
+            y: 0
+        };
+        this.angle = Math.PI / 2;
+        this.invulnerable = new Date();
     }
 
     collidesWithAsteroid(asteroid){

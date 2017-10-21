@@ -56,7 +56,6 @@ export default class Asteroid {
         part1.velocity.y *= -1;
 
         part2.velocity.x *= -1;
-        console.log(this,part1.position.x,part1.position.y,part1.radius,part1,part2);
 
         var parts = [];
         parts.push(part1);
