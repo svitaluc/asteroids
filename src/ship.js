@@ -14,7 +14,7 @@ export default class Ship {
         this.angle = Math.PI / 2;
         this.engineSpeed = 0.5;
         this.maxSpeed = 3;
-        this.invulnerable = new Date();
+        this.invulnerable = false;
 
         this.screenWidth = width;
         this.screenHeight = height;

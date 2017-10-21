@@ -15,10 +15,6 @@ export default class Game {
         this.scoreBoard = new ScoreBoard();
         this.missiles = [];
         this.asteroids = [];
-        for (var i = 0; i < 15; i++) {
-            //TODO osetrit, ze neni na lodi!
-            this.asteroids.push(new Asteroid(this.screenWidth, this.screenHeight));
-        }
         this.state = {
             score: 0,
             level: 1,
@@ -28,7 +24,7 @@ export default class Game {
         this.velocityChange = null;
         this.angleChange = null;
         this.shoot = false;
-        this.helpOn = false;
+        this.helpOn = true;
 
         // Create the back buffer canvas
         this.backBufferCanvas = document.createElement('canvas');
@@ -61,11 +57,23 @@ export default class Game {
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.renderHelp = this.renderHelp.bind(this);
         this.renderGameOver = this.renderGameOver.bind(this);
+        this.generateAsteroids = this.generateAsteroids.bind(this);
 
         window.onkeydown = this.handleKeyDow;
         window.onkeyup = this.handleKeyUp;
 
+        this.generateAsteroids();
         this.loop();
+    }
+
+    generateAsteroids(){
+        var amount = 10 + (5 * this.state.level);
+        while (this.asteroids.length < amount) {
+            var asteroid = new Asteroid(this.screenWidth, this.screenHeight);
+            if (Math.pow(asteroid.position.x - this.ship.position.x, 2) + Math.pow(asteroid.position.y - this.ship.position.y, 2) > Math.pow(asteroid.radius + 20, 2)) {
+                this.asteroids.push(asteroid);
+            }
+        }
     }
 
     loop() {
@@ -103,7 +111,9 @@ export default class Game {
 
         //update level
         if(this.asteroids.length === 0) {
-
+            this.state.level++;
+            this.ship.restart();
+            this.generateAsteroids();
         }
 
         //update asteroid position + collision with ship
@@ -312,22 +322,25 @@ export default class Game {
 
     renderHelp() {
         var ctx = this.backBufferContext;
-        ctx.globalAlpha = 0.8;
-        ctx.fillStyle = "grey";
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "white";
         ctx.fillRect(0, 0, this.screenWidth, this.screenHeight + 30);
         ctx.globalAlpha = 1;
-        ctx.fillStyle = 'white';
-        ctx.font = '30px orbitron arial';
+        ctx.fillStyle = '#005454';
+        ctx.font = 'bold 30px arial';
         ctx.textAlign = 'center';
-        ctx.fillText("HELP", this.screenWidth / 2, 100);
+        ctx.fillText("ASTEROIDS!", this.screenWidth / 2, 50);
+        ctx.font = 'bold 22px arial';
+        ctx.fillText("Destroy the asteroids and don't get hit!", this.screenWidth / 2, 90);
+        ctx.font = 'bold 27px arial';
         ctx.fillText("GAME CONTROLS:", this.screenWidth / 2, 140);
-        ctx.font = '27px orbitron arial';
+        ctx.font = 'bold 27px arial';
         ctx.fillText("TURN LEFT: A or ArrowLeft", this.screenWidth / 2, 200);
         ctx.fillText("TURN RIGHT: D or ArrowRight", this.screenWidth / 2, 250);
         ctx.fillText("MOVE FORWARD: W or ArrowUp", this.screenWidth / 2, 300);
         ctx.fillText("MOVE BACKWARD: S or ArrowDown", this.screenWidth / 2, 350);
         ctx.fillText("SHOOT: Space bar", this.screenWidth / 2, 400);
-        ctx.fillText("EXIT/ENTER HELP: Escape", this.screenWidth / 2, 450);
+        ctx.fillText("PLAY THE GAME: Escape", this.screenWidth / 2, 490);
 
         this.screenBufferContext.drawImage(this.backBufferCanvas, 0, 0);
     }

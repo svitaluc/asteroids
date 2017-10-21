@@ -15,11 +15,11 @@ export default class ScoreBoard {
         ctx.fillStyle = '#e0e0e0';
         ctx.font = '18px orbitron';
         ctx.textAlign = "left";
-        ctx.fillText("Asteroids!", 10, textLine);
-        ctx.fillText("Score: " + state.score, 110, textLine);
+        ctx.fillText("Score: " + state.score, 10, textLine);
         ctx.fillText("Level: " + state.level, 200, textLine);
-        ctx.fillText("Lives: " + state.lives, 290, textLine);
+        ctx.fillText("Lives: " + state.lives, 320, textLine);
         ctx.textAlign = "right";
+        ctx.fillStyle = '#c4c4c4';
         ctx.fillText("ESC to Help", 490, textLine);
         ctx.restore();
     }
