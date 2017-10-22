@@ -12,7 +12,7 @@ export default class Ship {
             y: 0
         };
         this.angle = Math.PI / 2;
-        this.engineSpeed = 0.5;
+        this.engineSpeed = 0.25;
         this.maxSpeed = 3;
         this.invulnerable = false;
 
@@ -22,7 +22,7 @@ export default class Ship {
         this.update = this.update.bind(this);
         this.updateAngle = this.updateAngle.bind(this);
         this.updateVelocity = this.updateVelocity.bind(this);
-        this.collidesWithAsteroid = this.collidesWithAsteroid.bind(this);
+        this.collidesWith = this.collidesWith.bind(this);
         this.restart = this.restart.bind(this);
         this.render = this.render.bind(this);
         this.relocate = this.relocate.bind(this);
@@ -71,7 +71,7 @@ export default class Ship {
         this.invulnerable = new Date();
     }
 
-    collidesWithAsteroid(asteroid){
+    collidesWith(asteroid){
         if(this.invulnerable) {
             return false;
         }

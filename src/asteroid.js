@@ -67,16 +67,16 @@ export default class Asteroid {
         this.position.x += this.velocity.x;
         this.position.y -= this.velocity.y;
 
-        if (this.position.x > this.screenWidth) {
+        if (this.position.x-this.radius > this.screenWidth) {
             this.position.x -= this.screenWidth;
         }
-        if (this.position.x < 0) {
+        if (this.position.x+this.radius < 0) {
             this.position.x += this.screenWidth;
         }
-        if (this.position.y < 0) {
+        if (this.position.y+this.radius < 0) {
             this.position.y += this.screenHeight;
         }
-        if (this.position.y > this.screenHeight) {
+        if (this.position.y-this.radius > this.screenHeight) {
             this.position.y -= this.screenHeight;
         }
     }

@@ -27,7 +27,7 @@ export default class Game {
         this.shoot = false;
         this.helpOn = true;
         this.gameOver = false;
-        this.ufoPeriod = 5000;
+        this.ufoPeriod = 10000;
         this.lastUfo = new Date();
         this.ufo = null;
 
@@ -36,6 +36,8 @@ export default class Game {
         this.fireAudio = new Audio('fire_missile.mp3');
         this.breakAAudio = new Audio('a_break.mp3');
         this.gameOverAudio = new Audio('failure.mp3');
+        this.ufoFireAudio = new Audio('ufoFire.mp3');
+        this.ufoHitAudio = new Audio('ufoHit.mp3');
 
         // Create the back buffer canvas
         this.backBufferCanvas = document.createElement('canvas');
@@ -61,7 +63,7 @@ export default class Game {
         this.update = this.update.bind(this);
         this.render = this.render.bind(this);
         this.shootMissile = this.shootMissile.bind(this);
-        this.resolveAsteroidAsteroidCollision = this.resolveAsteroidAsteroidCollision.bind(this);
+        this.resolveBounceCollision = this.resolveBounceCollision.bind(this);
         this.resolveAsteroidMissileCollision = this.resolveAsteroidMissileCollision.bind(this);
         this.loop = this.loop.bind(this);
         this.handleKeyDow = this.handleKeyDown.bind(this);
@@ -74,7 +76,7 @@ export default class Game {
         window.onkeydown = this.handleKeyDow;
         window.onkeyup = this.handleKeyUp;
 
-        // this.generateAsteroids();
+        this.generateAsteroids();
         this.loop();
     }
 
@@ -98,7 +100,9 @@ export default class Game {
         this.helpOn = false;
         this.missiles = [];
         this.asteroids = [];
-        // this.generateAsteroids();
+        this.generateAsteroids();
+        this.ufo = null;
+        this.lastUfo = new Date();
         this.gameOverAudio.pause();
         this.gameOverAudio.currentTime = 0;
         this.loop();
@@ -127,29 +131,39 @@ export default class Game {
 
         //update ship
         this.ship.update();
-        //update missiles position
+        //update missiles position and enemy missile-ship collision
+        var newMissiles = [];
+        var deleted = false;
         for (var i = this.missiles.length - 1; i > -1; i--) {
             this.missiles[i].update();
-            if ((this.missiles[i].position.x > this.screenWidth)
+            if (this.missiles[i].enemy && this.ship.collidesWith(this.missiles[i])){
+                deleted = true;
+                this.state.lives--;
+                this.ship.restart();
+                this.aSCollisionAudio.play();
+            }
+            else if ((this.missiles[i].position.x > this.screenWidth)
                 || (this.missiles[i].position.x < 0)
                 || (this.missiles[i].position.y > this.screenHeight)
                 || (this.missiles[i].position.y < 0)) {
-                this.missiles.splice(i, 1);
+                deleted = true;
             }
+            if (!deleted) newMissiles.push(this.missiles[i]);
+            deleted = false;
         }
+        this.missiles = newMissiles;
 
         //update level
-        // if(this.asteroids.length === 0) {
-        if(this.asteroids.length === 10) {
+        if(this.asteroids.length === 0) {
             this.state.level++;
             this.ship.restart();
-            // this.generateAsteroids();
+            this.generateAsteroids();
         }
 
         //update asteroid position + collision with ship
         let deletedAsteroid = null;
         for (var l = this.asteroids.length - 1; l > -1; l--) {
-            if (this.ship.collidesWithAsteroid(this.asteroids[l])) {
+            if (this.ship.collidesWith(this.asteroids[l])) {
                 deletedAsteroid = l;
                 this.state.lives--;
                 this.ship.restart();
@@ -173,30 +187,52 @@ export default class Game {
         //update asteroid-asteroid collisions
         for (var k = 0; k < this.asteroids.length - 1; k++) {
             for (var j = k + 1; j < this.asteroids.length; j++) {
-                this.resolveAsteroidAsteroidCollision(this.asteroids[k], this.asteroids[j]);
+                this.resolveBounceCollision(this.asteroids[k], this.asteroids[j]);
             }
         }
 
-        //update missile-asteroid collisions
-        let deletedMissiles = [];
+        //update missile-asteroid collisions and missile-ufo collisions
+        deleted = false;
+        var arMissiles = [];
         for (i = this.missiles.length - 1; i > -1; i--) {
             for (j = this.asteroids.length - 1; j > -1; j--) {
                 if (this.resolveAsteroidMissileCollision(j, i)) {
-                    deletedMissiles.push(i);
+                    deleted = true;
                     break;
                 }
             }
+            if (this.ufo && !deleted && !this.missiles[i].enemy) {
+                var differenceX = Math.abs(this.ufo.position.x - this.missiles[i].position.x);
+                var differenceY = Math.abs(this.ufo.position.y - this.missiles[i].position.y);
+                if ((differenceX * differenceX + differenceY * differenceY) < Math.pow(this.ufo.radius + this.missiles[i].radius, 2)) {
+                    deleted = true;
+                    this.ufo = null;
+                    this.lastUfo = new Date();
+                    this.state.score += 20;
+                    this.ufoHitAudio.play();
+                }
+            }
+            if (!deleted) arMissiles.push(this.missiles[i]);
+            deleted = false;
         }
-        for (let i = deletedMissiles.length - 1; i >= 0; i--)
-            this.missiles.splice(deletedMissiles[i], 1);
+        this.missiles = arMissiles;
 
+        //resolve ufo
         if(this.ufo){
             var ufoMissile = this.ufo.update(this.ship.position);
             if (ufoMissile){
                 this.missiles.push(ufoMissile);
+                this.ufoFireAudio.play();
             }
             for (k = 0; k < this.asteroids.length - 1; k++) {
-                this.resolveAsteroidAsteroidCollision(this.ufo, this.asteroids[k]);
+                this.resolveBounceCollision(this.ufo, this.asteroids[k]);
+            }
+            if (this.ship.collidesWith(this.ufo)) {
+                this.ufo = null;
+                this.lastUfo = new Date();
+                this.state.lives--;
+                this.ship.restart();
+                this.aSCollisionAudio.play();
             }
         }
         else if ((new Date() - this.lastUfo) > this.ufoPeriod){
@@ -262,7 +298,6 @@ export default class Game {
         //divide the asteroid
         var asteroidParts = asteroid.breakMe();
         this.asteroids.splice(aIndex, 1);
-        // this.missiles.splice(mIndex, 1);
 
         this.asteroids.push(asteroidParts[0]);
         this.asteroids.push(asteroidParts[1]);
@@ -271,7 +306,7 @@ export default class Game {
     }
 
     //this function is based on the collision solving by Nathan Bean in https://github.com/zombiepaladin/pool/blob/master/src/app.js
-    resolveAsteroidAsteroidCollision(a1, a2) {
+    resolveBounceCollision(a1, a2) {
         var differenceX = Math.abs(a1.position.x - a2.position.x);
         var differenceY = Math.abs(a1.position.y - a2.position.y);
         if ((differenceX * differenceX + differenceY * differenceY) > Math.pow(a1.radius + a2.radius, 2))
@@ -293,14 +328,14 @@ export default class Game {
         a2.position.y -= collisionNormal.y * overlap / 2;
 
         var angle = Math.atan2(collisionNormal.y, collisionNormal.x);
-        var va1 = Game.rotateVector(a1.velocity, angle);
-        var va2 = Game.rotateVector(a2.velocity, angle);
+        var va1 = this.rotateVector(a1.velocity, angle);
+        var va2 = this.rotateVector(a2.velocity, angle);
 
         var s = va1.x;
         va1.x = va2.x;
         va2.x = s;
-        va1 = Game.rotateVector(va1, -angle);
-        va2 = Game.rotateVector(va2, -angle);
+        va1 = this.rotateVector(va1, -angle);
+        va2 = this.rotateVector(va2, -angle);
 
         a1.velocity.x = Math.round(va1.x * 100) / 100;
         a1.velocity.y = Math.round(va1.y * 100) / 100;
@@ -310,7 +345,7 @@ export default class Game {
         this.aACollisionAudio.play();
     }
 
-    static rotateVector(vector, angle) {
+    rotateVector(vector, angle) {
         return {
             x: vector.x * Math.cos(angle) - vector.y * Math.sin(angle),
             y: vector.x * Math.sin(angle) + vector.y * Math.cos(angle)
@@ -406,17 +441,18 @@ export default class Game {
         ctx.fillText("ASTEROIDS!", this.screenWidth / 2, 50);
         ctx.font = 'bold 22px arial';
         ctx.fillText("Destroy the asteroids and don't get hit!", this.screenWidth / 2, 90);
+        ctx.fillText("...and don't forget to watch out aliens!", this.screenWidth / 2, 120);
         ctx.font = 'bold 27px arial';
-        ctx.fillText("GAME CONTROLS:", this.screenWidth / 2, 140);
+        ctx.fillText("GAME CONTROLS:", this.screenWidth / 2, 170);
         ctx.font = 'bold 20px arial';
-        ctx.fillText("TURN LEFT: A or ArrowLeft", this.screenWidth / 2, 200);
-        ctx.fillText("TURN RIGHT: D or ArrowRight", this.screenWidth / 2, 230);
-        ctx.fillText("MOVE FORWARD: W or ArrowUp", this.screenWidth / 2, 260);
-        ctx.fillText("MOVE BACKWARD: S or ArrowDown", this.screenWidth / 2, 290);
-        ctx.fillText("SHOOT: Space bar", this.screenWidth / 2, 320);
-        ctx.fillText("RELOCATE TO RANDOM POSITION: R", this.screenWidth / 2, 350);
-        ctx.fillText("CONTINUE THE GAME: Escape", this.screenWidth / 2, 420);
-        ctx.fillText("PLAY A NEW GAME: Enter", this.screenWidth / 2, 450);
+        ctx.fillText("TURN LEFT: A or ArrowLeft", this.screenWidth / 2, 230);
+        ctx.fillText("TURN RIGHT: D or ArrowRight", this.screenWidth / 2, 260);
+        ctx.fillText("MOVE FORWARD: W or ArrowUp", this.screenWidth / 2, 290);
+        ctx.fillText("MOVE BACKWARD: S or ArrowDown", this.screenWidth / 2, 320);
+        ctx.fillText("SHOOT: Space bar", this.screenWidth / 2, 350);
+        ctx.fillText("RELOCATE TO RANDOM POSITION: R", this.screenWidth / 2, 380);
+        ctx.fillText("CONTINUE THE GAME: Escape", this.screenWidth / 2, 440);
+        ctx.fillText("PLAY A NEW GAME: Enter", this.screenWidth / 2, 470);
 
         this.screenBufferContext.drawImage(this.backBufferCanvas, 0, 0);
     }
