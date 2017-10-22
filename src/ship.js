@@ -12,7 +12,7 @@ export default class Ship {
             y: 0
         };
         this.angle = Math.PI / 2;
-        this.engineSpeed = 0.25;
+        this.engineSpeed = 0.05;
         this.maxSpeed = 3;
         this.invulnerable = false;
 
@@ -108,7 +108,7 @@ export default class Ship {
         }
     }
 
-    render(ctx) {
+    render(ctx, velocityChange) {
         ctx.save();
         ctx.strokeStyle = 'white';
         ctx.fillStyle = 'brown';
@@ -126,6 +126,20 @@ export default class Ship {
         ctx.closePath();
         ctx.stroke();
         ctx.fill();
+        if(velocityChange === 'f'){
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.fillStyle = 'orange';
+            ctx.strokeStyle = 'yellow';
+            ctx.moveTo(-1, 6);
+            ctx.lineTo(-3, 11);
+            ctx.lineTo(0, 15);
+            ctx.lineTo(3, 11);
+            ctx.lineTo(1, 6);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+        }
         ctx.restore();
     }
 }

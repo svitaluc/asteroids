@@ -242,7 +242,7 @@ export default class Game {
 
     render() {
         this.backBufferContext.drawImage(this.img, 0, 0, 500, 500);
-        this.ship.render(this.backBufferContext);
+        this.ship.render(this.backBufferContext, this.velocityChange);
         for (var i = 0; i < this.missiles.length; i++) {
             this.missiles[i].render(this.backBufferContext);
         }
@@ -258,7 +258,7 @@ export default class Game {
 
     renderGameOver() {
         var ctx = this.backBufferContext;
-        ctx.globalAlpha = 0.75;
+        ctx.globalAlpha = 0.8;
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, this.screenWidth, this.screenHeight + 30);
         ctx.globalAlpha = 1;
@@ -431,7 +431,7 @@ export default class Game {
 
     renderHelp() {
         var ctx = this.backBufferContext;
-        ctx.globalAlpha = 0.75;
+        ctx.globalAlpha = 0.8;
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, this.screenWidth, this.screenHeight + 30);
         ctx.globalAlpha = 1;
